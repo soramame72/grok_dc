@@ -101,9 +101,9 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
             console.error(error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: 'コマンド実行中にエラーが発生したぜ。', ephemeral: true });
+                await interaction.followUp({ content: 'コマンド実行中にエラーが発生した。', ephemeral: true });
             } else {
-                await interaction.reply({ content: 'コマンド実行中にエラーが発生したぜ。', ephemeral: true });
+                await interaction.reply({ content: 'コマンド実行中にエラーが発生した。', ephemeral: true });
             }
         }
     }
@@ -157,6 +157,7 @@ client.on('messageCreate', async message => {
             return;
         }
 
+        // Show typing indicator immediately
         await message.channel.sendTyping();
 
         try {

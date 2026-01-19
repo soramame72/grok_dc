@@ -104,13 +104,18 @@ async function summarize(text) {
 
 async function analyzeImage(imageUrl, prompt) {
     try {
+        // Ensure Japanese response
+        const japanesePrompt = prompt
+            ? `${prompt}\n\n必ず日本語で回答してください。`
+            : "この画像について詳しく説明してください。必ず日本語で回答してください。";
+
         const messages = [
             {
                 role: "user",
                 content: [
                     {
                         type: "text",
-                        text: prompt || "この画像について詳しく説明してください。"
+                        text: japanesePrompt
                     },
                     {
                         type: "image_url",
