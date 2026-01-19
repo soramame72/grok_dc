@@ -124,14 +124,24 @@ async function analyzeImage(imageUrl, prompt) {
 
         const completion = await groq.chat.completions.create({
             messages: messages,
-            model: "meta-llama/llama-4-scout-17b-16e-instruct", // Llama 4 Scout with vision support
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
             temperature: 0.7,
-            max_tokens: 1024,
+            max_tokens: 500, // Reduced to avoid Discord's 2000 char limit
         });
 
-        return completion.choices[0]?.message?.content || "画像の分析ができなかった。";
+        let response = completion.choices[0]?.message?.content || "画像の分析ができなかった。";
+
+        // Ensure response is under Discord's 2000 character limit
+        if (response.length > 1900) {
+            response = response.substring(0, 1900) + "...\n(応答が長すぎるため省略)";
+        }
+
+        return response;
     } catch (error) {
         console.error("Groq Vision API Error:", error);
+        if (error.message && error.message.includes('decommissioned')) {
+            return "画像分析モデルが利用できない。管理者に連絡してほしい。";
+        }
         return "画像の処理中にエラーが発生した。もう一度試してほしい。";
     }
 }

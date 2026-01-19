@@ -164,38 +164,56 @@ client.on('messageCreate', async message => {
             if (content.startsWith("ファクトチェック")) {
                 let targetText = content.replace("ファクトチェック", "").trim();
 
+                console.log("ファクトチェック triggered. Initial targetText:", targetText || "(empty)");
+                console.log("Has reference?", !!message.reference);
+
                 // If no text provided, check if this is a reply to another message
                 if (!targetText && message.reference) {
                     try {
                         const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                        console.log("Fetched replied message. Has content?", !!repliedMessage.content);
+                        console.log("Replied message content:", repliedMessage.content?.substring(0, 100));
+
                         if (repliedMessage.content) {
                             targetText = repliedMessage.content;
-                            console.log("Fact-checking replied message:", targetText.substring(0, 50) + "...");
+                            console.log("✓ Fact-checking replied message:", targetText.substring(0, 50) + "...");
+                        } else {
+                            console.log("✗ Replied message has no text content");
                         }
                     } catch (e) {
                         console.error("Failed to fetch replied message:", e);
                     }
                 }
 
+                console.log("Final targetText for fact-check:", targetText || "(still empty)");
                 const response = await factCheck(targetText);
                 await message.reply(response);
             }
             else if (content.startsWith("要約して")) {
                 let targetText = content.replace("要約して", "").trim();
 
+                console.log("要約 triggered. Initial targetText:", targetText || "(empty)");
+                console.log("Has reference?", !!message.reference);
+
                 // If no text provided, check if this is a reply to another message
                 if (!targetText && message.reference) {
                     try {
                         const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                        console.log("Fetched replied message. Has content?", !!repliedMessage.content);
+                        console.log("Replied message content:", repliedMessage.content?.substring(0, 100));
+
                         if (repliedMessage.content) {
                             targetText = repliedMessage.content;
-                            console.log("Summarizing replied message:", targetText.substring(0, 50) + "...");
+                            console.log("✓ Summarizing replied message:", targetText.substring(0, 50) + "...");
+                        } else {
+                            console.log("✗ Replied message has no text content");
                         }
                     } catch (e) {
                         console.error("Failed to fetch replied message:", e);
                     }
                 }
 
+                console.log("Final targetText for summarize:", targetText || "(still empty)");
                 const response = await summarize(targetText);
                 await message.reply(response);
             }
