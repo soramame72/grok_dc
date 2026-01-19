@@ -9,16 +9,16 @@ module.exports = {
 **Grok コマンド一覧**
 
 🤖 **チャット**
-\`@grok [テキスト]\`: メンションを送ると答えるぜ。
+\`@grok [テキスト]\`: メンションを送ると答えます。
 
 🛠 **スラッシュコマンド**
-\`/about\`: 俺について。
-\`/cmds\`: このヘルプを表示する。
+\`/about\`: 俺について
+\`/cmds\`: このヘルプを表示
 
 🖱 **右クリック (Apps)**
 メッセージを右クリック -> アプリ
-- \`Grok: Fact Check\`: そのメッセージをファクトチェックする。
-- \`Grok: Summarize\`: そのメッセージを要約する。
+- \`Grok: Fact Check\`: そのメッセージをファクトチェック
+- \`Grok: Summarize\`: そのメッセージを要約
         `;
         await interaction.reply({ content: helpText, ephemeral: true });
     },

@@ -152,22 +152,39 @@ client.on('messageCreate', async message => {
         try {
             // Check for keyword triggers within mention
             if (content.startsWith("ファクトチェック")) {
-                const targetText = content.replace("ファクトチェック", "").trim();
-                const response = targetText ? await factCheck(targetText) : "ファクトチェックするテキストをくれよ。";
+                let targetText = content.replace("ファクトチェック", "").trim();
+
+                // If no text provided, check if this is a reply to another message
+                if (!targetText && message.reference) {
+                    try {
+                        const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                        if (repliedMessage.content) {
+                            targetText = repliedMessage.content;
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch replied message:", e);
+                    }
+                }
+
+                const response = await factCheck(targetText);
                 await message.reply(response);
             }
             else if (content.startsWith("要約して")) {
-                const targetText = content.replace("要約して", "").trim();
-                // If empty, check for reply reference
+                let targetText = content.replace("要約して", "").trim();
+
+                // If no text provided, check if this is a reply to another message
                 if (!targetText && message.reference) {
-                    const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
-                    if (repliedMessage.content) {
-                        const response = await summarize(repliedMessage.content);
-                        await message.reply(response);
-                        return;
+                    try {
+                        const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                        if (repliedMessage.content) {
+                            targetText = repliedMessage.content;
+                        }
+                    } catch (e) {
+                        console.error("Failed to fetch replied message:", e);
                     }
                 }
-                const response = targetText ? await summarize(targetText) : "要約するテキストがないぞ。";
+
+                const response = await summarize(targetText);
                 await message.reply(response);
             }
             else {
