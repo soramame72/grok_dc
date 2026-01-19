@@ -172,8 +172,26 @@ client.on('messageCreate', async message => {
                 await message.reply(response);
             }
             else {
-                // Normal Chat
-                const messages = [{ role: "user", content: content }];
+                // Normal Chat with Context
+                const messages = [];
+
+                // Fetch context if it's a reply
+                if (message.reference) {
+                    try {
+                        const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                        if (repliedMessage.content && !repliedMessage.author.bot) {
+                            messages.push({ role: "user", content: repliedMessage.content });
+                        } else if (repliedMessage.content && repliedMessage.author.id === client.user.id) {
+                            messages.push({ role: "assistant", content: repliedMessage.content });
+                        }
+                    } catch (e) {
+                        console.error("Context fetch error:", e);
+                    }
+                }
+
+                messages.push({ role: "user", content: content });
+
+                // Add typing indicator simulation (optional delay logic could be added here)
                 const response = await getGrokResponse(messages);
                 await message.reply(response);
             }
