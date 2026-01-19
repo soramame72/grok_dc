@@ -55,10 +55,10 @@ async function getGrokResponse(messages) {
             stop: null
         });
 
-        return completion.choices[0]?.message?.content || "何も思い浮かばないな。";
+        return completion.choices[0]?.message?.content || "何も思い浮かばない。";
     } catch (error) {
         console.error("Groq API Error:", error);
-        return "おっと、エラーだ。誰かがケーブルを引っこ抜いたか、モデルが古くなったかだな。ログを見てくれ。";
+        return "エラーが発生した。誰かがケーブルを引っこ抜いたか、モデルが古くなったかもしれない。ログを確認してほしい。";
     }
 }
 
@@ -124,7 +124,7 @@ async function analyzeImage(imageUrl, prompt) {
 
         const completion = await groq.chat.completions.create({
             messages: messages,
-            model: "llama-3.2-90b-vision-preview", // Groq's vision model
+            model: "llama-3.2-11b-vision-preview", // Updated to available model
             temperature: 0.7,
             max_tokens: 1024,
         });
@@ -132,7 +132,7 @@ async function analyzeImage(imageUrl, prompt) {
         return completion.choices[0]?.message?.content || "画像の分析ができなかった。";
     } catch (error) {
         console.error("Groq Vision API Error:", error);
-        return "おっと、画像の処理中にエラーが発生した。もう一度試してくれ。";
+        return "画像の処理中にエラーが発生した。もう一度試してほしい。";
     }
 }
 

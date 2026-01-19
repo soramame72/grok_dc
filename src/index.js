@@ -138,7 +138,7 @@ client.on('interactionCreate', async interaction => {
         } catch (error) {
             console.error(error);
             try {
-                await interaction.editReply("エラーだ。調子が悪いみたいだ。");
+                await interaction.editReply("エラーが発生した。調子が悪いようだ。");
             } catch (e) {
                 console.error('Failed to send error message:', e);
             }
@@ -170,6 +170,7 @@ client.on('messageCreate', async message => {
                         const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
                         if (repliedMessage.content) {
                             targetText = repliedMessage.content;
+                            console.log("Fact-checking replied message:", targetText.substring(0, 50) + "...");
                         }
                     } catch (e) {
                         console.error("Failed to fetch replied message:", e);
@@ -188,6 +189,7 @@ client.on('messageCreate', async message => {
                         const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
                         if (repliedMessage.content) {
                             targetText = repliedMessage.content;
+                            console.log("Summarizing replied message:", targetText.substring(0, 50) + "...");
                         }
                     } catch (e) {
                         console.error("Failed to fetch replied message:", e);
@@ -234,7 +236,7 @@ client.on('messageCreate', async message => {
             }
         } catch (error) {
             console.error(error);
-            await message.reply("エラーだ。すまないな。");
+            await message.reply("エラーが発生した。申し訳ない。");
         }
     }
 });
