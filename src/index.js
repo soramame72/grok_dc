@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits, Collection, REST, Routes, ApplicationCommandType, ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const { getGrokResponse, factCheck, summarize } = require('./lib/ai');
+const { getGrokResponse, factCheck, summarize, analyzeImage } = require('./lib/ai');
 const { startServer } = require('./web/server');
 const axios = require('axios');
 
@@ -71,7 +71,7 @@ async function registerCommands() {
 
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}`);
-    client.user.setActivity('X (旧Twitter)', { type: ActivityType.Watching });
+    client.user.setActivity('Twitter', { type: ActivityType.Playing });
 
     // Register commands if token is present
     if (process.env.DISCORD_BOT_TOKEN) {

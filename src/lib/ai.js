@@ -102,8 +102,43 @@ async function summarize(text) {
     return getGrokResponse([{ role: "user", content: prompt }]);
 }
 
+async function analyzeImage(imageUrl, prompt) {
+    try {
+        const messages = [
+            {
+                role: "user",
+                content: [
+                    {
+                        type: "text",
+                        text: prompt || "この画像について詳しく説明してください。"
+                    },
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: imageUrl
+                        }
+                    }
+                ]
+            }
+        ];
+
+        const completion = await groq.chat.completions.create({
+            messages: messages,
+            model: "llama-3.2-90b-vision-preview", // Groq's vision model
+            temperature: 0.7,
+            max_tokens: 1024,
+        });
+
+        return completion.choices[0]?.message?.content || "画像の分析ができなかった。";
+    } catch (error) {
+        console.error("Groq Vision API Error:", error);
+        return "おっと、画像の処理中にエラーが発生した。もう一度試してくれ。";
+    }
+}
+
 module.exports = {
     getGrokResponse,
     factCheck,
-    summarize
+    summarize,
+    analyzeImage
 };
