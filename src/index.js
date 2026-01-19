@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits, Collection, REST, Routes, ApplicationCommandType, ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const { getGrokResponse, factCheck, summarize, analyzeImage } = require('./lib/ai');
+const { getGrokResponse, factCheck, summarize, translate, analyzeImage } = require('./lib/ai');
 const { startServer } = require('./web/server');
 const axios = require('axios');
 
@@ -47,6 +47,10 @@ const contextCommands = [
     },
     {
         name: 'Grok: Summarize',
+        type: ApplicationCommandType.Message
+    },
+    {
+        name: 'Grok: Translate',
         type: ApplicationCommandType.Message
     }
 ];
@@ -127,13 +131,18 @@ client.on('interactionCreate', async interaction => {
 
         try {
             let response;
+            let ephemeral = false; // Default to public
+
             if (interaction.commandName === 'Grok: Fact Check') {
                 response = await factCheck(text);
             } else if (interaction.commandName === 'Grok: Summarize') {
                 response = await summarize(text);
+            } else if (interaction.commandName === 'Grok: Translate') {
+                response = await translate(text);
+                ephemeral = true; // Translate is private
             }
 
-            await interaction.editReply(response);
+            await interaction.editReply({ content: response, flags: ephemeral ? 64 : undefined });
 
         } catch (error) {
             console.error(error);

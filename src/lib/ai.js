@@ -102,6 +102,27 @@ async function summarize(text) {
     return getGrokResponse([{ role: "user", content: prompt }]);
 }
 
+async function translate(text) {
+    if (!text || text.trim() === '') {
+        return "翻訳するテキストがありません。";
+    }
+
+    const prompt = `
+以下のテキストを翻訳してください。
+
+【要件】
+- 日本語のテキストは英語に翻訳
+- 英語のテキストは日本語に翻訳
+- その他の言語は日本語に翻訳
+- 自然で読みやすい翻訳を心がけてください
+- 翻訳結果のみを返してください（説明不要）
+
+テキスト:
+"${text}"
+    `;
+    return getGrokResponse([{ role: "user", content: prompt }]);
+}
+
 async function analyzeImage(imageUrl, prompt) {
     try {
         // Ensure Japanese response
@@ -155,5 +176,6 @@ module.exports = {
     getGrokResponse,
     factCheck,
     summarize,
+    translate,
     analyzeImage
 };
