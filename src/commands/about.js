@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Grokについて'),
     async execute(interaction) {
         await interaction.reply({
-            content: "私はGrok。X (旧Twitter) で話題のAI…の、まあ、親戚みたいなものだ。\nユーモアと少しの皮肉を交えて、あなたの質問に答える。\n\nCreated with Groq API.",
+            content: "私はGrok。\nversion: 1.3.4\nProduced by soramame72\n\nCreated with Groq API.",
             ephemeral: true
         });
     },
