@@ -69,7 +69,7 @@ async function registerCommands() {
     }
 }
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
     console.log(`Logged in as ${client.user.tag}`);
     client.user.setActivity('Twitter', { type: ActivityType.Playing });
 
@@ -112,12 +112,18 @@ client.on('interactionCreate', async interaction => {
         const targetMessage = interaction.targetMessage;
         const text = targetMessage.content;
 
-        if (!text) {
-            await interaction.reply({ content: "テキストがないメッセージは処理できないぜ。", ephemeral: true });
-            return;
+        // Defer reply IMMEDIATELY to prevent timeout
+        try {
+            await interaction.deferReply();
+        } catch (error) {
+            console.error('Failed to defer reply:', error);
+            return; // Exit if we can't defer
         }
 
-        await interaction.deferReply(); // AI might take time
+        if (!text) {
+            await interaction.editReply({ content: "テキストがないメッセージは処理できない。" });
+            return;
+        }
 
         try {
             let response;
@@ -131,7 +137,11 @@ client.on('interactionCreate', async interaction => {
 
         } catch (error) {
             console.error(error);
-            await interaction.editReply("エラーだ。調子が悪いみたいだ。");
+            try {
+                await interaction.editReply("エラーだ。調子が悪いみたいだ。");
+            } catch (e) {
+                console.error('Failed to send error message:', e);
+            }
         }
     }
 });
@@ -188,28 +198,39 @@ client.on('messageCreate', async message => {
                 await message.reply(response);
             }
             else {
-                // Normal Chat with Context
-                const messages = [];
+                // Check if there are image attachments
+                const imageAttachment = message.attachments.find(att =>
+                    att.contentType && att.contentType.startsWith('image/')
+                );
 
-                // Fetch context if it's a reply
-                if (message.reference) {
-                    try {
-                        const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
-                        if (repliedMessage.content && !repliedMessage.author.bot) {
-                            messages.push({ role: "user", content: repliedMessage.content });
-                        } else if (repliedMessage.content && repliedMessage.author.id === client.user.id) {
-                            messages.push({ role: "assistant", content: repliedMessage.content });
+                if (imageAttachment) {
+                    // Image analysis mode
+                    const response = await analyzeImage(imageAttachment.url, content || "この画像について詳しく説明してください。");
+                    await message.reply(response);
+                } else {
+                    // Normal Chat with Context
+                    const messages = [];
+
+                    // Fetch context if it's a reply
+                    if (message.reference) {
+                        try {
+                            const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                            if (repliedMessage.content && !repliedMessage.author.bot) {
+                                messages.push({ role: "user", content: repliedMessage.content });
+                            } else if (repliedMessage.content && repliedMessage.author.id === client.user.id) {
+                                messages.push({ role: "assistant", content: repliedMessage.content });
+                            }
+                        } catch (e) {
+                            console.error("Context fetch error:", e);
                         }
-                    } catch (e) {
-                        console.error("Context fetch error:", e);
                     }
+
+                    messages.push({ role: "user", content: content });
+
+                    // Add typing indicator simulation (optional delay logic could be added here)
+                    const response = await getGrokResponse(messages);
+                    await message.reply(response);
                 }
-
-                messages.push({ role: "user", content: content });
-
-                // Add typing indicator simulation (optional delay logic could be added here)
-                const response = await getGrokResponse(messages);
-                await message.reply(response);
             }
         } catch (error) {
             console.error(error);
