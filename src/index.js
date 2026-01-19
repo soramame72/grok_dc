@@ -153,7 +153,7 @@ client.on('messageCreate', async message => {
         const content = message.content.replace(/<@!?[0-9]+>/, '').trim();
 
         if (!content) {
-            await message.reply("なんだい？");
+            await message.reply("何か用か?");
             return;
         }
 

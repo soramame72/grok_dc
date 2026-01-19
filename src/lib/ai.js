@@ -124,7 +124,7 @@ async function analyzeImage(imageUrl, prompt) {
 
         const completion = await groq.chat.completions.create({
             messages: messages,
-            model: "llama-3.2-11b-vision-preview", // Updated to available model
+            model: "meta-llama/llama-4-scout-17b-16e-instruct", // Llama 4 Scout with vision support
             temperature: 0.7,
             max_tokens: 1024,
         });
