@@ -2,6 +2,8 @@
 
 XのGrokを模倣したDiscord Bot。Groq APIとRenderを使用して構築。
 
+導入:https://discord.com/oauth2/authorize?client_id=1462795869613981853&permissions=277025512512&integration_type=0&scope=bot
+
 ## 機能
 
 ### コマンド
