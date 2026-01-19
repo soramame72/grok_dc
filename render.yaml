@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: grok-discord-bot
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: 20.10.0
+    plan: free
+    autoDeploy: true
