@@ -48,9 +48,9 @@ async function getGrokResponse(messages) {
         const completion = await groq.chat.completions.create({
             messages: conversation,
             model: "llama-3.3-70b-versatile",
-            temperature: 0.8, // Slightly higher for more creativity
-            max_tokens: 1024,
-            top_p: 1,
+            temperature: 0.7, // Reduced for faster, more focused responses
+            max_tokens: 512, // Reduced from 1024 for faster responses
+            top_p: 0.9, // Slightly reduced for faster sampling
             stream: false,
             stop: null
         });

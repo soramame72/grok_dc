@@ -7,6 +7,9 @@ const axios = require('axios');
 
 require('dotenv').config();
 
+// Conversation context storage (per user)
+const conversationContexts = new Map();
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -116,9 +119,9 @@ client.on('interactionCreate', async interaction => {
         const targetMessage = interaction.targetMessage;
         const text = targetMessage.content;
 
-        // Defer reply IMMEDIATELY to prevent timeout
+        // Defer reply IMMEDIATELY (within 3 seconds) to prevent timeout
         try {
-            await interaction.deferReply();
+            await interaction.deferReply({ ephemeral: interaction.commandName === 'Grok: Translate' });
         } catch (error) {
             console.error('Failed to defer reply:', error);
             return; // Exit if we can't defer
@@ -131,7 +134,6 @@ client.on('interactionCreate', async interaction => {
 
         try {
             let response;
-            let ephemeral = false; // Default to public
 
             if (interaction.commandName === 'Grok: Fact Check') {
                 response = await factCheck(text);
@@ -139,15 +141,14 @@ client.on('interactionCreate', async interaction => {
                 response = await summarize(text);
             } else if (interaction.commandName === 'Grok: Translate') {
                 response = await translate(text);
-                ephemeral = true; // Translate is private
             }
 
-            await interaction.editReply({ content: response, flags: ephemeral ? 64 : undefined });
+            await interaction.editReply({ content: response });
 
         } catch (error) {
             console.error(error);
             try {
-                await interaction.editReply("エラーが発生した。調子が悪いようだ。");
+                await interaction.editReply("エラーが発生した。もう一度試してほしい。");
             } catch (e) {
                 console.error('Failed to send error message:', e);
             }
@@ -162,68 +163,56 @@ client.on('messageCreate', async message => {
         const content = message.content.replace(/<@!?[0-9]+>/, '').trim();
 
         if (!content) {
-            await message.reply("何か用か?");
+            await message.reply("ねえ！元気？何か手伝えることはある？");
             return;
         }
 
-        // Show typing indicator immediately
+        // Show typing indicator immediately and keep it alive
         await message.channel.sendTyping();
 
-        try {
-            // Check for keyword triggers within mention
-            if (content.startsWith("ファクトチェック")) {
-                let targetText = content.replace("ファクトチェック", "").trim();
+        // Keep typing indicator alive during processing
+        const typingInterval = setInterval(() => {
+            message.channel.sendTyping().catch(() => clearInterval(typingInterval));
+        }, 5000); // Refresh every 5 seconds
 
-                console.log("ファクトチェック triggered. Initial targetText:", targetText || "(empty)");
-                console.log("Has reference?", !!message.reference);
+        try {
+            // Normalize content for command detection (remove extra spaces)
+            const normalizedContent = content.replace(/\s+/g, ' ').trim();
+
+            // Check for keyword triggers within mention (whitespace-insensitive)
+            if (normalizedContent.startsWith("ファクトチェック")) {
+                let targetText = content.replace(/ファクトチェック/i, "").trim();
 
                 // If no text provided, check if this is a reply to another message
                 if (!targetText && message.reference) {
                     try {
                         const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
-                        console.log("Fetched replied message. Has content?", !!repliedMessage.content);
-                        console.log("Replied message content:", repliedMessage.content?.substring(0, 100));
-
                         if (repliedMessage.content) {
                             targetText = repliedMessage.content;
-                            console.log("✓ Fact-checking replied message:", targetText.substring(0, 50) + "...");
-                        } else {
-                            console.log("✗ Replied message has no text content");
                         }
                     } catch (e) {
                         console.error("Failed to fetch replied message:", e);
                     }
                 }
 
-                console.log("Final targetText for fact-check:", targetText || "(still empty)");
                 const response = await factCheck(targetText);
                 await message.reply(response);
             }
-            else if (content.startsWith("要約して")) {
-                let targetText = content.replace("要約して", "").trim();
-
-                console.log("要約 triggered. Initial targetText:", targetText || "(empty)");
-                console.log("Has reference?", !!message.reference);
+            else if (normalizedContent.startsWith("要約して")) {
+                let targetText = content.replace(/要約して/i, "").trim();
 
                 // If no text provided, check if this is a reply to another message
                 if (!targetText && message.reference) {
                     try {
                         const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
-                        console.log("Fetched replied message. Has content?", !!repliedMessage.content);
-                        console.log("Replied message content:", repliedMessage.content?.substring(0, 100));
-
                         if (repliedMessage.content) {
                             targetText = repliedMessage.content;
-                            console.log("✓ Summarizing replied message:", targetText.substring(0, 50) + "...");
-                        } else {
-                            console.log("✗ Replied message has no text content");
                         }
                     } catch (e) {
                         console.error("Failed to fetch replied message:", e);
                     }
                 }
 
-                console.log("Final targetText for summarize:", targetText || "(still empty)");
                 const response = await summarize(targetText);
                 await message.reply(response);
             }
@@ -239,32 +228,54 @@ client.on('messageCreate', async message => {
                     await message.reply(response);
                 } else {
                     // Normal Chat with Context
-                    const messages = [];
+                    const userId = message.author.id;
 
-                    // Fetch context if it's a reply
+                    // Initialize or get user's conversation context
+                    if (!conversationContexts.has(userId)) {
+                        conversationContexts.set(userId, []);
+                    }
+
+                    const userContext = conversationContexts.get(userId);
+
+                    // If this is a reply to the bot's message, include that context
                     if (message.reference) {
                         try {
                             const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
-                            if (repliedMessage.content && !repliedMessage.author.bot) {
-                                messages.push({ role: "user", content: repliedMessage.content });
-                            } else if (repliedMessage.content && repliedMessage.author.id === client.user.id) {
-                                messages.push({ role: "assistant", content: repliedMessage.content });
+
+                            // Only add context if replying to bot's own message
+                            if (repliedMessage.author.id === client.user.id) {
+                                // Add the bot's previous message to context if not already there
+                                if (userContext.length === 0 || userContext[userContext.length - 1].content !== repliedMessage.content) {
+                                    userContext.push({ role: "assistant", content: repliedMessage.content });
+                                }
                             }
                         } catch (e) {
                             console.error("Context fetch error:", e);
                         }
                     }
 
-                    messages.push({ role: "user", content: content });
+                    // Add current user message
+                    userContext.push({ role: "user", content: content });
 
-                    // Add typing indicator simulation (optional delay logic could be added here)
-                    const response = await getGrokResponse(messages);
+                    // Keep only last 10 messages (5 exchanges) to avoid token limits
+                    if (userContext.length > 10) {
+                        userContext.splice(0, userContext.length - 10);
+                    }
+
+                    const response = await getGrokResponse(userContext);
+
+                    // Add bot's response to context
+                    userContext.push({ role: "assistant", content: response });
+
                     await message.reply(response);
                 }
             }
         } catch (error) {
             console.error(error);
             await message.reply("エラーが発生した。申し訳ない。");
+        } finally {
+            // Clear typing interval
+            clearInterval(typingInterval);
         }
     }
 });
