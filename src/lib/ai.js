@@ -150,7 +150,7 @@ async function analyzeImage(imageUrl, prompt) {
 
         const completion = await groq.chat.completions.create({
             messages: messages,
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "llama-3.1-8b-instant",
             temperature: 0.7,
             max_tokens: 500, // Reduced to avoid Discord's 2000 char limit
         });
